@@ -4,3 +4,5 @@ aiohttp==3.8.2
 Jinja2==3.0.3
 werkzeug==2.2.2
 itsdangerous==2.0.1
+requests
+python-telegram-bot
