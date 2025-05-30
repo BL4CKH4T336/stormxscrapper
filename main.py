@@ -4,23 +4,15 @@ import time
 from telegram import Bot, InputMediaPhoto
 from telegram.error import TelegramError
 from datetime import datetime
-import asyncio
 
 # Configuration
-TELEGRAM_BOT_TOKEN = '8062649272:AAFkPK3avG4EtjIZKuut8dgq0cv1_F3aihA'  # Replace with your bot token
+TELEGRAM_BOT_TOKEN = '8062649272:AAFkPK3avG4EtjIZKuut8dgq0cv1_F3aihA'
+CHANNEL_ID = -1002507032506  # or CHANNEL_ID if numeric
 IMAGE_URL = 'https://ibb.co/DXrGXMz'  # Set your image URL here
 RAW_FILE_URL = 'https://raw.githubusercontent.com/BL4CKH4T336/num/refs/heads/main/vbvbin.txt'
 CC_GENERATOR_URL = 'https://drlabapis.onrender.com/api/ccgenerator?bin={bin}&count=1'
 XCHECKER_URL = 'https://xchecker.cc/api.php?cc={cc}'
 BIN_LOOKUP_URL = 'https://bins.antipublic.cc/bins/{bin}'
-
-# Dictionary to store channel IDs and their last used BINs
-CHANNELS = {
-    # Format: CHANNEL_ID: {'last_bins': [], 'last_ccs': []}
-    # Example:
-    # -100123456789: {'last_bins': [], 'last_ccs': []},
-    # -100987654321: {'last_bins': [], 'last_ccs': []}
-}
 
 # Initialize bot
 bot = Bot(token=TELEGRAM_BOT_TOKEN)
@@ -98,7 +90,6 @@ def format_message(cc, auth_response, bin_status, bin_info):
 -----------------------------
 [✜] Auth : <i>{auth_response}</i>
 [✜] 3DS : <i>{bin_status} ✅</i>
-[✜] BY : @Darkboy336
 -----------------------------
 [✜] BIN: #{bin_info.get('bin', '')}
 [✜] BANK: {bank}
@@ -108,94 +99,54 @@ def format_message(cc, auth_response, bin_status, bin_info):
 """
     return message.strip()
 
-async def send_to_channel(channel_id):
-    channel_data = CHANNELS.get(channel_id, {'last_bins': [], 'last_ccs': []})
-    
-    try:
-        # Get 3D FALSE bins
-        false_bins, status_text = get_3d_false_bins()
-
-        if not false_bins:
-            print(f"No 3D FALSE bins found for channel {channel_id}")
-            await asyncio.sleep(60)
-            return
-
-        # Filter out recently used BINs for this channel
-        available_bins = [bin for bin in false_bins if bin not in channel_data['last_bins']]
-        
-        if not available_bins:
-            # If all bins were used recently, reset the list
-            available_bins = false_bins
-            channel_data['last_bins'] = []
-
-        # Select a random BIN that hasn't been used recently in this channel
-        selected_bin = random.choice(available_bins)
-        
-        # Generate CC (try multiple times if needed)
-        cc = None
-        for _ in range(3):  # Try 3 times to generate a unique CC
-            cc = generate_cc(selected_bin)
-            if cc and cc not in channel_data['last_ccs']:
-                break
-            cc = None
-        
-        if not cc:
-            print(f"Failed to generate unique CC for channel {channel_id}")
-            await asyncio.sleep(60)
-            return
-
-        # Check CC
-        auth_response = check_cc(cc)
-
-        # Get BIN info
-        bin_info = get_bin_info(selected_bin)
-
-        # Format message
-        message = format_message(cc, auth_response, status_text, bin_info)
-
-        # Send message with photo
-        try:
-            await bot.send_photo(
-                chat_id=channel_id,
-                photo=IMAGE_URL,
-                caption=message,
-                parse_mode='HTML'
-            )
-            print(f"Message sent to channel {channel_id} at {datetime.now()}")
-            
-            # Update channel data
-            channel_data['last_bins'].append(selected_bin)
-            channel_data['last_ccs'].append(cc)
-            
-            # Keep only last 20 bins/ccs to prevent memory issues
-            if len(channel_data['last_bins']) > 20:
-                channel_data['last_bins'] = channel_data['last_bins'][-20:]
-            if len(channel_data['last_ccs']) > 20:
-                channel_data['last_ccs'] = channel_data['last_ccs'][-20:]
-                
-            CHANNELS[channel_id] = channel_data
-            
-        except TelegramError as e:
-            print(f"Error sending message to channel {channel_id}: {e}")
-
-    except Exception as e:
-        print(f"Error in main loop for channel {channel_id}: {e}")
-
-async def main_loop():
+async def send_to_channel():
     while True:
-        tasks = []
-        for channel_id in CHANNELS.keys():
-            tasks.append(send_to_channel(channel_id))
-        
-        # Run all channel sends concurrently
-        await asyncio.gather(*tasks)
-        
-        # Wait 5 minutes before next round
-        await asyncio.sleep(60)
+        try:
+            # Get 3D FALSE bins
+            false_bins, status_text = get_3d_false_bins()
+
+            if not false_bins:
+                print("No 3D FALSE bins found")
+                await asyncio.sleep(60)  # Wait 5 minutes before trying again
+                continue
+
+            # Select a random BIN
+            selected_bin = random.choice(false_bins)
+
+            # Generate CC
+            cc = generate_cc(selected_bin)
+            if not cc:
+                await asyncio.sleep(60)
+                continue
+
+            # Check CC
+            auth_response = check_cc(cc)
+
+            # Get BIN info
+            bin_info = get_bin_info(selected_bin)
+
+            # Format message
+            message = format_message(cc, auth_response, status_text, bin_info)
+
+            # Send message with photo
+            try:
+                await bot.send_photo(
+                    chat_id=CHANNEL_ID,
+                    photo=IMAGE_URL,
+                    caption=message,
+                    parse_mode='HTML'
+                )
+                print(f"Message sent at {datetime.now()}")
+            except TelegramError as e:
+                print(f"Error sending message: {e}")
+
+            # Wait 5 minutes before next check
+            await asyncio.sleep(60)
+
+        except Exception as e:
+            print(f"Error in main loop: {e}")
+            await asyncio.sleep(60)  # Wait before retrying
 
 if __name__ == '__main__':
-    # Check if any channels are configured
-    if not CHANNELS:
-        print("Error: No channels configured. Please add channel IDs to the CHANNELS dictionary.")
-    else:
-        asyncio.run(main_loop())
+    import asyncio
+    asyncio.run(send_to_channel())
