@@ -116,7 +116,7 @@ async def send_to_channel():
             # Generate CC
             cc = generate_cc(selected_bin)
             if not cc:
-                await asyncio.sleep(300)
+                await asyncio.sleep(60)
                 continue
 
             # Check CC
@@ -141,11 +141,11 @@ async def send_to_channel():
                 print(f"Error sending message: {e}")
 
             # Wait 5 minutes before next check
-            await asyncio.sleep(180)
+            await asyncio.sleep(60)
 
         except Exception as e:
             print(f"Error in main loop: {e}")
-            await asyncio.sleep(180)  # Wait before retrying
+            await asyncio.sleep(60)  # Wait before retrying
 
 if __name__ == '__main__':
     import asyncio
