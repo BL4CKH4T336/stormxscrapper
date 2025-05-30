@@ -7,7 +7,7 @@ from datetime import datetime
 
 # Configuration
 TELEGRAM_BOT_TOKEN = '8062649272:AAFkPK3avG4EtjIZKuut8dgq0cv1_F3aihA'
-CHANNEL_ID = -1002641339979  # or CHANNEL_ID if numeric
+CHANNEL_ID = -1002507032506  # or CHANNEL_ID if numeric
 IMAGE_URL = 'https://ibb.co/DXrGXMz'  # Set your image URL here
 RAW_FILE_URL = 'https://raw.githubusercontent.com/BL4CKH4T336/num/refs/heads/main/vbvbin.txt'
 CC_GENERATOR_URL = 'https://drlabapis.onrender.com/api/ccgenerator?bin={bin}&count=1'
