@@ -107,7 +107,7 @@ async def send_to_channel():
 
             if not false_bins:
                 print("No 3D FALSE bins found")
-                await asyncio.sleep(300)  # Wait 5 minutes before trying again
+                await asyncio.sleep(60)  # Wait 5 minutes before trying again
                 continue
 
             # Select a random BIN
